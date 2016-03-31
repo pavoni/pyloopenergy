@@ -15,7 +15,7 @@ import logging
 import socketIO_client
 
 # logging.basicConfig(level=logging.DEBUG)
-logging.basicConfig(level=logging.INFO)
+# logging.basicConfig(level=logging.INFO)
 LOG = logging.getLogger(__name__)
 
 LOOP_SERVER = 'https://www.your-loop.com'
@@ -56,9 +56,12 @@ class LoopEnergy():
         self.gas_old_timestamp = None
         self.gas_old_reading = None
 
+        self._elec_callback = None
+        self._gas_callback = None
+
         self.subscription = subscription
         self.connected_ok = False
-        self._thread_exit = False
+        self.thread_exit = False
         self._event_thread = threading.Thread(target=self._run_event_thread,
                                               name='LoopEnergy Event Thread')
         self._event_thread.start()
@@ -78,6 +81,14 @@ class LoopEnergy():
         """Were we able to connect?."""
         return self.connected_ok
 
+    def subscribe_gas(self, callback):
+        """Add a callback function for gas updates."""
+        self._gas_callback = callback
+
+    def subscribe_elecricity(self, callback):
+        """Add a callback function for electricity updates."""
+        self._elec_callback = callback
+
     def _run_event_thread(self):
 
         class Namespace(socketIO_client.BaseNamespace):
@@ -85,7 +96,7 @@ class LoopEnergy():
 
             def on_disconnect(inner_self):
                 # pylint: disable=no-self-argument
-                if self._thread_exit:
+                if self.thread_exit:
                     return
                 if self.connected_ok:
                     LOG.warning(
@@ -112,23 +123,22 @@ class LoopEnergy():
 
             if self.gas_serial is not None:
                 socket_io.emit('subscribe_gas_interval',
-                           {
-                               'serial': self.gas_serial,
-                               'clientIp': '127.0.0.1',
-                               'secret': self.gas_secret
-                           })
-            while not self._thread_exit:
+                               {
+                                   'serial': self.gas_serial,
+                                   'clientIp': '127.0.0.1',
+                                   'secret': self.gas_secret
+                               })
+            while not self.thread_exit:
                 socket_io.wait(seconds=60)
                 LOG.info('LoopEnergy thread poll')
             LOG.info('Exiting LoopEnergy thread')
 
     def _update_elec(self, arg):
         self.connected_ok = True
-
         self.elec_kw = arg['inst']/1000.0
         LOG.info('Electricity rate: %s', self.elec_kw)
-        # if self.subscription
-        #     subscription
+        if self._elec_callback is not None:
+            self._elec_callback()
 
     def _update_gas(self, arg):
         # These details aren't documented
@@ -168,12 +178,12 @@ class LoopEnergy():
         period = (self.gas_device_timestamp - self.gas_old_timestamp)/(60*60)
         self.gas_kw = (CONVERSION_FACTOR * gas_used / period)/1000
         LOG.info('Gas rate: %s', self.gas_kw)
-
-        #         subscription
+        if self._gas_callback is not None:
+            self._gas_callback()
 
     def terminate(self):
         '''
         Close down the update thread
         '''
         LOG.info('Terminate thread')
-        self._thread_exit = True
+        self.thread_exit = True
