@@ -11,7 +11,7 @@ You can get this by logging into your-loop.com, opening your browser's terminal,
 
 *You should keep your secret keys,* **secret!**
 
-Thanks for Marcos Scriven for producing a node implementation that I've shamelessly copied! http://marcosscriven.github.io/loop/
+Thanks for Marcos Scriven for producing a node implementation that I've shamelessly copied! https://github.com/marcosscriven/loop
 
 Data is returned in kw.
 
