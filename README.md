@@ -1,7 +1,7 @@
 PyLoopEnergy
 ======
 
-This provides a python API to [Loop Energy](https://www.your-loop.com) who provide electrocity and monitors.
+This provides a python API to [Loop Energy](https://www.your-loop.com) who provide electricity and monitors.
 
 It uses their service to provide readings that are updated every 10 seconds for electrricity, and the gas every 15 minutes.
 
@@ -24,8 +24,8 @@ How to use
 ----------
 
     >> import pyloopenergy
-    >> elec_serial = '[your serial]'
-    >> elec_secret = '[your_secret]'
+    >> elec_serial = 'your serial'
+    >> elec_secret = 'your_secret'
     >> le = pyloopenergy.LoopEnergy(elec_serial, elec_secret)
     >> le.electricity_useage
 
@@ -33,4 +33,6 @@ How to use
 
     >> le.terminate()
 
-Note: It can take 60s to terminate the monitoring thread.
+Notes:
+ 1. Data is fetched asynchronously, so `le` may not be populated if you `electricity_useage` straight after creating it. The API provides callback functions on update (add details here). 
+ 2. It can take 60s to terminate the monitoring thread after calling `terminte`.
