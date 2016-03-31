@@ -59,7 +59,6 @@ class LoopEnergy():
         self._elec_callback = None
         self._gas_callback = None
 
-        self.subscription = subscription
         self.connected_ok = False
         self.thread_exit = False
         self._event_thread = threading.Thread(target=self._run_event_thread,
