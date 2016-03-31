@@ -35,7 +35,7 @@ class LoopEnergy():
     https://github.com/marcosscriven/loop
     """
     def __init__(self, elec_serial, elec_secret,
-                 gas_serial=None, gas_secret=None, subscription=None):
+                 gas_serial=None, gas_secret=None):
         # pylint: disable=too-many-arguments
         '''
         Electricity is always required, gas is optional
