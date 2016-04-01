@@ -14,8 +14,6 @@ import logging
 # So important to use socketIO-client v 0.5.6
 import socketIO_client
 
-# logging.basicConfig(level=logging.DEBUG)
-# logging.basicConfig(level=logging.INFO)
 LOG = logging.getLogger(__name__)
 
 LOOP_SERVER = 'https://www.your-loop.com'
@@ -128,8 +126,8 @@ class LoopEnergy():
                                    'secret': self.gas_secret
                                })
             while not self.thread_exit:
-                socket_io.wait(seconds=60)
-                LOG.info('LoopEnergy thread poll')
+                socket_io.wait(seconds=15)
+                LOG.debug('LoopEnergy thread poll')
             LOG.info('Exiting LoopEnergy thread')
 
     def _update_elec(self, arg):
@@ -186,3 +184,4 @@ class LoopEnergy():
         '''
         LOG.info('Terminate thread')
         self.thread_exit = True
+        self._event_thread.join()
