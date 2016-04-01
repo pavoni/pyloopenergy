@@ -106,29 +106,31 @@ class LoopEnergy():
                 self.terminate()
 
         LOG.info('Started LoopEnergy thread')
-        with socketIO_client.SocketIO(
-                LOOP_SERVER, LOOP_PORT,
-                Namespace) as socket_io:
-            socket_io.on('electric_realtime', self._update_elec)
-            socket_io.on('gas_interval', self._update_gas)
-            socket_io.emit('subscribe_electric_realtime',
-                           {
-                               'serial': self.elec_serial,
-                               'clientIp': '127.0.0.1',
-                               'secret': self.elec_secret
-                           })
-
-            if self.gas_serial is not None:
-                socket_io.emit('subscribe_gas_interval',
+        while not self.thread_exit:
+            LOG.debug('Opening socket connection')
+            with socketIO_client.SocketIO(
+                    LOOP_SERVER, LOOP_PORT,
+                    Namespace) as socket_io:
+                socket_io.on('electric_realtime', self._update_elec)
+                socket_io.on('gas_interval', self._update_gas)
+                socket_io.emit('subscribe_electric_realtime',
                                {
-                                   'serial': self.gas_serial,
+                                   'serial': self.elec_serial,
                                    'clientIp': '127.0.0.1',
-                                   'secret': self.gas_secret
+                                   'secret': self.elec_secret
                                })
-            while not self.thread_exit:
-                socket_io.wait(seconds=15)
-                LOG.debug('LoopEnergy thread poll')
-            LOG.info('Exiting LoopEnergy thread')
+
+                if self.gas_serial is not None:
+                    socket_io.emit('subscribe_gas_interval',
+                                   {
+                                       'serial': self.gas_serial,
+                                       'clientIp': '127.0.0.1',
+                                       'secret': self.gas_secret
+                                   })
+                while not self.thread_exit:
+                    socket_io.wait(seconds=15)
+                    LOG.debug('LoopEnergy thread poll')
+        LOG.info('Exiting LoopEnergy thread')
 
     def _update_elec(self, arg):
         self.connected_ok = True

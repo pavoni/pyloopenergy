@@ -34,9 +34,9 @@ How to use
     >> le.terminate()
 
 Notes:
- 1. Data is fetched asynchronously, so `le` may not be populated if you `electricity_useage` straight after creating it. The API provides callback functions on update (add details here). 
- 2. It can take 60s to terminate the monitoring thread after calling `terminate`.
- 
+ 1. Data is fetched asynchronously, so `le` may not be populated if you `electricity_useage` straight after creating it. The API provides callback functions on update (add details here).
+ 2. It can take 15s to terminate the monitoring thread after calling `terminate`.
+
 
 Simple subscription example
 ---------
