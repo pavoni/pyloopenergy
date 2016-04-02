@@ -59,6 +59,7 @@ class LoopEnergy():
 
         self.connected_ok = False
         self.thread_exit = False
+        self.reconnect_needed = False
         self._event_thread = threading.Thread(target=self._run_event_thread,
                                               name='LoopEnergy Event Thread')
         self._event_thread.start()
@@ -96,9 +97,7 @@ class LoopEnergy():
                 if self.thread_exit:
                     return
                 if self.connected_ok:
-                    LOG.warning(
-                        'Disconnected from https://www.your-loop.com, '
-                        'will retry')
+                    self.reconnect_needed = True
                     return
 
                 LOG.error('Could not connect to https://www.your-loop.com')
@@ -107,10 +106,14 @@ class LoopEnergy():
 
         LOG.info('Started LoopEnergy thread')
         while not self.thread_exit:
-            LOG.debug('Opening socket connection')
+            if self.reconnect_needed:
+                LOG.warning('Retrying socket connection')
+            else:
+                LOG.info('Opening socket connection')
             with socketIO_client.SocketIO(
                     LOOP_SERVER, LOOP_PORT,
                     Namespace) as socket_io:
+                self.reconnect_needed = False
                 socket_io.on('electric_realtime', self._update_elec)
                 socket_io.on('gas_interval', self._update_gas)
                 socket_io.emit('subscribe_electric_realtime',
@@ -127,9 +130,11 @@ class LoopEnergy():
                                        'clientIp': '127.0.0.1',
                                        'secret': self.gas_secret
                                    })
-                while not self.thread_exit:
+                while not (self.thread_exit or self.reconnect_needed):
                     socket_io.wait(seconds=15)
-                    LOG.debug('LoopEnergy thread poll')
+                    LOG.info('LoopEnergy thread poll')
+                LOG.info('Out of while')
+            LOG.info('Out of with')
         LOG.info('Exiting LoopEnergy thread')
 
     def _update_elec(self, arg):
