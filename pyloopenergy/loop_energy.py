@@ -132,9 +132,7 @@ class LoopEnergy():
                                    })
                 while not (self.thread_exit or self.reconnect_needed):
                     socket_io.wait(seconds=15)
-                    LOG.info('LoopEnergy thread poll')
-                LOG.info('Out of while')
-            LOG.info('Out of with')
+                    LOG.debug('LoopEnergy thread poll')
         LOG.info('Exiting LoopEnergy thread')
 
     def _update_elec(self, arg):
@@ -179,7 +177,7 @@ class LoopEnergy():
         if self.gas_old_reading is None:
             return
         gas_used = (self.gas_reading - self.gas_old_reading)
-        period = (self.gas_device_timestamp - self.gas_old_timestamp)/(60*60)
+        period = float(self.gas_device_timestamp - self.gas_old_timestamp)/(60*60)
         self.gas_kw = (CONVERSION_FACTOR * gas_used / period)/1000
         LOG.info('Gas rate: %s', self.gas_kw)
         if self._gas_callback is not None:
