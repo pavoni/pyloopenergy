@@ -15,6 +15,12 @@ Thanks for Marcos Scriven for producing a node implementation that I've shameles
 
 Data is returned in kw.
 
+**Experimental Gas Meter Support**
+
+The gas meter support is experimental and not all gas meters are properly supported yet - so if the data you see doesn't agree with the readings you see via loop energy please report an issue, and if you're a developer please investigate the data that's being returned from your meter and compare it to the data from my meter listed here https://github.com/pavoni/pyloopenergy/blob/master/pyloopenergy/loop_energy.py#L146-156. 
+
+I hope to support more meter types if we can work out what the readings mean. Contributions are very welcome!
+
 Dependencies
 ------------
 PyLoopEnergy depends on socketIO-client. It needs version 0.5.6 which supports socket.IO version 0.9, rather than 1.0.
