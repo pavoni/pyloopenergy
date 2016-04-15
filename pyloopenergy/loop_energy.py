@@ -196,7 +196,7 @@ class LoopEnergy():
             LOG.error('Unsupported meter type %s', self.gas_meter_type)
 
         m_joules = cu_metres * self.gas_meter_calorific * VOLUME_CORRECTION
-        kwh = m_joules / 3.6
+        kwh = m_joules / 3600
         return kwh / period
 
     def terminate(self):
