@@ -1,9 +1,9 @@
 PyLoopEnergy
 ======
 
-This provides a python API to [Loop Energy](https://www.your-loop.com) who provide electricity and monitors.
+This provides a python API to [Loop Energy](https://www.your-loop.com) who provide electricity and gas monitors.
 
-It uses their service to provide readings that are updated every 10 seconds for electricity, and the gas every 15 minutes.
+It uses their service to provide readings that are updated every 10 seconds for electricity, and every 15 minutes for gas.
 
 To use the service you need the the client serial number and secret keys for your devices.
 
@@ -11,15 +11,9 @@ You can get this by logging into your-loop.com, opening your browser's terminal,
 
 *You should keep your secret keys,* **secret!**
 
-Thanks for Marcos Scriven for producing a node implementation that I've shamelessly copied! https://github.com/marcosscriven/loop
+Thanks for Marcos Scriven for producing a node implementation that I've shamelessly copied. https://github.com/marcosscriven/loop
 
 Data is returned in kw.
-
-**Experimental Gas Meter Support**
-
-The gas meter support is experimental and not all gas meters are properly supported yet - so if the data you see doesn't agree with the readings you see via loop energy please report an issue, and if you're a developer please investigate the data that's being returned from your meter and compare it to the data from my meter listed here https://github.com/pavoni/pyloopenergy/blob/master/pyloopenergy/loop_energy.py#L146-156.
-
-I hope to support more meter types if we can work out what the readings mean. Contributions are very welcome!
 
 Dependencies
 ------------
