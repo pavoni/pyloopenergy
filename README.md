@@ -34,7 +34,7 @@ How to use
     >> le.terminate()
 
 Notes:
- 1. Data is fetched asynchronously, so `le` may not be populated if you `electricity_useage` straight after creating it. The API provides callback functions on update (add details here).
+ 1. Data is fetched asynchronously, so `le` may not be populated if you `electricity_useage` straight after creating it. The API provides callback functions on update (there is a simple example below).
  2. It can take 15s to terminate the monitoring thread after calling `terminate`.
 
 
@@ -71,7 +71,6 @@ Electricity = 1.13
 Gas = 0.0
 Electricity = 1.116
 ````
-
 
 Gas Meter Types and Calorific values
 ---------
