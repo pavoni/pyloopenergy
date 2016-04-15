@@ -17,7 +17,7 @@ Data is returned in kw.
 
 **Experimental Gas Meter Support**
 
-The gas meter support is experimental and not all gas meters are properly supported yet - so if the data you see doesn't agree with the readings you see via loop energy please report an issue, and if you're a developer please investigate the data that's being returned from your meter and compare it to the data from my meter listed here https://github.com/pavoni/pyloopenergy/blob/master/pyloopenergy/loop_energy.py#L146-156. 
+The gas meter support is experimental and not all gas meters are properly supported yet - so if the data you see doesn't agree with the readings you see via loop energy please report an issue, and if you're a developer please investigate the data that's being returned from your meter and compare it to the data from my meter listed here https://github.com/pavoni/pyloopenergy/blob/master/pyloopenergy/loop_energy.py#L146-156.
 
 I hope to support more meter types if we can work out what the readings mean. Contributions are very welcome!
 
@@ -78,4 +78,28 @@ Gas = 0.0
 Electricity = 1.116
 ````
 
-The gas code assumes that the meter is a metric meter - and I've added come comments on the info that I suspect specifies my meter type. Enhancements welcome for other meter types!
+
+Gas Meter Types and Calorific values
+---------
+
+The library supports metric and imperial gas meters (reading cubic metres or 100s of cubic feet)
+
+The default is a metric meter, but you can specify an imperial or metric meter.
+
+````
+le = pyloopenergy.LoopEnergy(elec_serial, elec_secret, gas_serial, gas_secret, pyloopemergy.IMPERIAL)
+
+le = pyloopenergy.LoopEnergy(elec_serial, elec_secret, gas_serial, gas_secret, pyloopemergy.METRIC)
+
+````
+
+To convert from a volume reading into kw, the library needs to know how much energy is in each metre of gas. The default is 39.11, but you can use the real number from your supplier if you like.
+
+````
+le = pyloopenergy.LoopEnergy(elec_serial, elec_secret, gas_serial, gas_secret, pyloopemergy.IMPERIAL, 39.1)
+
+le = pyloopenergy.LoopEnergy(elec_serial, elec_secret, gas_serial, gas_secret, pyloopemergy.METRIC, 39.1)
+
+````
+
+
