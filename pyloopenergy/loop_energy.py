@@ -19,9 +19,17 @@ LOG = logging.getLogger(__name__)
 LOOP_SERVER = 'https://www.your-loop.com'
 LOOP_PORT = 443
 
-# M3 x Calorific value 39.4 x volume correction 1.02264 / 3.6 = 11.1922
-# This figure to matches loop energy's dashboard
-CONVERSION_FACTOR = 11.11
+# https://www.gov.uk/guidance/gas-meter-readings-and-bill-calculation
+# Energy value of the gas in MJ per m3
+DEFAULT_CALORIFIC = 39.11
+# Correction factor to ref temp and pressure
+VOLUME_CORRECTION = 1.02264
+# 100 cu ft to m3 conversion factor
+METRIC_CONVERSION = 2.83
+
+# Meter types
+METRIC = 'metric'
+IMPERIAL = 'imperial'
 
 
 class LoopEnergy():
@@ -33,17 +41,19 @@ class LoopEnergy():
     https://github.com/marcosscriven/loop
     """
     def __init__(self, elec_serial, elec_secret,
-                 gas_serial=None, gas_secret=None):
+                 gas_serial=None, gas_secret=None,
+                 gas_meter_type=METRIC, gas_calorific=DEFAULT_CALORIFIC):
         # pylint: disable=too-many-arguments
         '''
         Electricity is always required, gas is optional
         '''
-
         self.elec_serial = elec_serial
         self.elec_secret = elec_secret
 
         self.gas_serial = gas_serial
         self.gas_secret = gas_secret
+        self.gas_meter_type = gas_meter_type
+        self.gas_meter_calorific = gas_calorific
 
         self.gas_reading = None
         self.gas_device_timestamp = None
@@ -143,21 +153,8 @@ class LoopEnergy():
             self._elec_callback()
 
     def _update_gas(self, arg):
-        # These details aren't documented
-        # Data returned is:-
-        # 'statusByte2': 1,
-        # 'statusByte3': 16,
-        # 'receivedTimestamp': 1459348277,
-        # 'totalRegister': 12820,
-        # 'serial': '[removed]',
-        # 'deviceTimestamp': 1459348200,
-        # 'lqi': 47,
-        # 'rssi': -66,
-        # 'lux': 1}
-
         # DeviceTimestamp is the time (in secs) when the reading was taken
         # totalRegister looks to be related to the meter reading
-        # My meter is m3 - suspect this is defined by the statusBytes!
 
         self.connected_ok = True
         gas_reading = arg['totalRegister']
@@ -177,11 +174,30 @@ class LoopEnergy():
         if self.gas_old_reading is None:
             return
         gas_used = (self.gas_reading - self.gas_old_reading)
-        period = float(self.gas_device_timestamp - self.gas_old_timestamp)/(60*60)
-        self.gas_kw = (CONVERSION_FACTOR * gas_used / period)/1000
+        secs = float(self.gas_device_timestamp - self.gas_old_timestamp)
+        hours = secs/(60*60)
+        self.gas_kw = self._convert_kw(gas_used, hours)
         LOG.info('Gas rate: %s', self.gas_kw)
         if self._gas_callback is not None:
             self._gas_callback()
+
+    def _convert_kw(self, gas_used, period):
+        '''
+        Convert gas reading to kw
+        For details see
+        https://www.gov.uk/guidance/gas-meter-readings-and-bill-calculation
+        '''
+        if self.gas_meter_type == METRIC:
+            cu_metres = gas_used
+        elif self.gas_meter_type == IMPERIAL:
+            cu_metres = gas_used * METRIC_CONVERSION
+        else:
+            cu_metres = 0
+            LOG.error('Unsupported meter type %s', self.gas_meter_type)
+
+        m_joules = cu_metres * self.gas_meter_calorific * VOLUME_CORRECTION
+        kwh = m_joules / 3.6
+        return kwh / period
 
     def terminate(self):
         '''
