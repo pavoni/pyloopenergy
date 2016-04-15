@@ -87,18 +87,18 @@ The library supports metric and imperial gas meters (reading cubic metres or 100
 The default is a metric meter, but you can specify an imperial or metric meter.
 
 ````
-le = pyloopenergy.LoopEnergy(elec_serial, elec_secret, gas_serial, gas_secret, pyloopemergy.IMPERIAL)
+le = pyloopenergy.LoopEnergy(elec_serial, elec_secret, gas_serial, gas_secret, pyloopenergy.IMPERIAL)
 
-le = pyloopenergy.LoopEnergy(elec_serial, elec_secret, gas_serial, gas_secret, pyloopemergy.METRIC)
+le = pyloopenergy.LoopEnergy(elec_serial, elec_secret, gas_serial, gas_secret, pyloopenergy.METRIC)
 
 ````
 
 To convert from a volume reading into kw, the library needs to know how much energy is in each metre of gas. The default is 39.11, but you can use the real number from your supplier if you like.
 
 ````
-le = pyloopenergy.LoopEnergy(elec_serial, elec_secret, gas_serial, gas_secret, pyloopemergy.IMPERIAL, 39.1)
+le = pyloopenergy.LoopEnergy(elec_serial, elec_secret, gas_serial, gas_secret, pyloopenergy.IMPERIAL, 39.1)
 
-le = pyloopenergy.LoopEnergy(elec_serial, elec_secret, gas_serial, gas_secret, pyloopemergy.METRIC, 39.1)
+le = pyloopenergy.LoopEnergy(elec_serial, elec_secret, gas_serial, gas_secret, pyloopenergy.METRIC, 39.1)
 
 ````
 
