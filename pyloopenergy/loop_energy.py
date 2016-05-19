@@ -69,6 +69,7 @@ class LoopEnergy():
 
         self.connected_ok = False
         self.thread_exit = False
+        self.updated_in_interval = False
         self.reconnect_needed = False
         self._event_thread = threading.Thread(target=self._run_event_thread,
                                               name='LoopEnergy Event Thread')
@@ -141,12 +142,17 @@ class LoopEnergy():
                                        'secret': self.gas_secret
                                    })
                 while not (self.thread_exit or self.reconnect_needed):
+                    self.updated_in_interval = False
                     socket_io.wait(seconds=15)
+                    if not self.updated_in_interval:
+                        self.reconnect_needed = True
+                        LOG.warning('No updates for 15s - reconnecting')
                     LOG.debug('LoopEnergy thread poll')
         LOG.info('Exiting LoopEnergy thread')
 
     def _update_elec(self, arg):
         self.connected_ok = True
+        self.updated_in_interval = True
         self.elec_kw = arg['inst']/1000.0
         LOG.info('Electricity rate: %s', self.elec_kw)
         if self._elec_callback is not None:
@@ -157,6 +163,7 @@ class LoopEnergy():
         # totalRegister looks to be related to the meter reading
 
         self.connected_ok = True
+        self.updated_in_interval = True
         gas_reading = arg['totalRegister']
         device_timestamp = arg['deviceTimestamp']
         if device_timestamp == self.gas_device_timestamp:
