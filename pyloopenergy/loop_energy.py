@@ -19,6 +19,13 @@ LOG = logging.getLogger(__name__)
 LOOP_SERVER = 'https://www.your-loop.com'
 LOOP_PORT = 443
 
+# How long to wait for updates before assuming the connection
+# has died (and so reconnect) (secs)
+RECONNECT_AFTER = 60
+
+# Time to wait for updates (secs)
+WAIT_BEFORE_POLL = 15
+
 # https://www.gov.uk/guidance/gas-meter-readings-and-bill-calculation
 # Energy value of the gas in MJ per m3
 DEFAULT_CALORIFIC = 39.11
@@ -141,12 +148,20 @@ class LoopEnergy():
                                        'clientIp': '127.0.0.1',
                                        'secret': self.gas_secret
                                    })
+                intervals_without_update = 0
                 while not (self.thread_exit or self.reconnect_needed):
                     self.updated_in_interval = False
-                    socket_io.wait(seconds=15)
-                    if not self.updated_in_interval:
+                    socket_io.wait(seconds=WAIT_BEFORE_POLL)
+                    if self.updated_in_interval:
+                        intervals_without_update = 0
+                    else:
+                        intervals_without_update += 1
+                    time_without_update = (
+                        intervals_without_update * WAIT_BEFORE_POLL)
+                    if time_without_update > RECONNECT_AFTER:
                         self.reconnect_needed = True
-                        LOG.warning('No updates for 15s - reconnecting')
+                        LOG.warning('No updates for %s - reconnecting',
+                                    RECONNECT_AFTER)
                     LOG.debug('LoopEnergy thread poll')
         LOG.info('Exiting LoopEnergy thread')
 
