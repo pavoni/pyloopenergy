@@ -124,45 +124,51 @@ class LoopEnergy():
 
         LOG.info('Started LoopEnergy thread')
         while not self.thread_exit:
-            if self.reconnect_needed:
-                LOG.warning('Retrying socket connection')
-            else:
-                LOG.info('Opening socket connection')
-            with socketIO_client.SocketIO(
-                    LOOP_SERVER, LOOP_PORT,
-                    Namespace) as socket_io:
-                self.reconnect_needed = False
-                socket_io.on('electric_realtime', self._update_elec)
-                socket_io.on('gas_interval', self._update_gas)
-                socket_io.emit('subscribe_electric_realtime',
-                               {
-                                   'serial': self.elec_serial,
-                                   'clientIp': '127.0.0.1',
-                                   'secret': self.elec_secret
-                               })
-
-                if self.gas_serial is not None:
-                    socket_io.emit('subscribe_gas_interval',
+            try:
+                if self.reconnect_needed:
+                    LOG.warning('Retrying socket connection')
+                else:
+                    LOG.info('Opening socket connection')
+                with socketIO_client.SocketIO(
+                        LOOP_SERVER, LOOP_PORT,
+                        Namespace) as socket_io:
+                    self.reconnect_needed = False
+                    socket_io.on('electric_realtime', self._update_elec)
+                    socket_io.on('gas_interval', self._update_gas)
+                    socket_io.emit('subscribe_electric_realtime',
                                    {
-                                       'serial': self.gas_serial,
+                                       'serial': self.elec_serial,
                                        'clientIp': '127.0.0.1',
-                                       'secret': self.gas_secret
+                                       'secret': self.elec_secret
                                    })
-                intervals_without_update = 0
-                while not (self.thread_exit or self.reconnect_needed):
-                    self.updated_in_interval = False
-                    socket_io.wait(seconds=WAIT_BEFORE_POLL)
-                    if self.updated_in_interval:
-                        intervals_without_update = 0
-                    else:
-                        intervals_without_update += 1
-                    time_without_update = (
-                        intervals_without_update * WAIT_BEFORE_POLL)
-                    if time_without_update > RECONNECT_AFTER:
-                        self.reconnect_needed = True
-                        LOG.warning('No updates for %s - reconnecting',
-                                    RECONNECT_AFTER)
-                    LOG.debug('LoopEnergy thread poll')
+
+                    if self.gas_serial is not None:
+                        socket_io.emit('subscribe_gas_interval',
+                                       {
+                                           'serial': self.gas_serial,
+                                           'clientIp': '127.0.0.1',
+                                           'secret': self.gas_secret
+                                       })
+                    intervals_without_update = 0
+                    while not (self.thread_exit or self.reconnect_needed):
+                        self.updated_in_interval = False
+                        socket_io.wait(seconds=WAIT_BEFORE_POLL)
+                        if self.updated_in_interval:
+                            intervals_without_update = 0
+                        else:
+                            intervals_without_update += 1
+                        time_without_update = (
+                            intervals_without_update * WAIT_BEFORE_POLL)
+                        if time_without_update > RECONNECT_AFTER:
+                            self.reconnect_needed = True
+                            LOG.warning('No updates for %s - reconnecting',
+                                        RECONNECT_AFTER)
+                        LOG.debug('LoopEnergy thread poll')
+            except ValueError as ex:
+                # Looks like this comes from an invalid HTTP packet return
+                # so try to reconnect.
+                LOG.warning('Exception (will try to reconnect) -  %s', ex)
+                self.reconnect_needed = True
         LOG.info('Exiting LoopEnergy thread')
 
     def _update_elec(self, arg):
