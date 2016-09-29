@@ -7,8 +7,8 @@ and gas monitors (https://www.your-loop.com/)
 """
 
 import threading
-
 import logging
+import requests
 
 # Uses Socket.io protocol 0.9 - so is not compatible with 1.0
 # So important to use socketIO-client v 0.5.6
@@ -164,9 +164,10 @@ class LoopEnergy():
                             LOG.warning('No updates for %s - reconnecting',
                                         RECONNECT_AFTER)
                         LOG.debug('LoopEnergy thread poll')
-            except ValueError as ex:
-                # Looks like this comes from an invalid HTTP packet return
-                # so try to reconnect.
+            except (ValueError,
+                    requests.exceptions.RequestException) as ex:
+                # Looks like ValueError comes from an
+                # invalid HTTP packet return
                 LOG.warning('Exception (will try to reconnect) -  %s', ex)
                 self.reconnect_needed = True
         LOG.info('Exiting LoopEnergy thread')
