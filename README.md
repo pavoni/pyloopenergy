@@ -9,6 +9,8 @@ To use the service you need the the client serial number and secret keys for you
 
 You can get this by logging into your-loop.com, opening your browser's console, and typing in ```Drupal.settings.navetas_realtime```.
 
+(There is more detailed documentation about how to do this here https://home-assistant.io/components/sensor.loop_energy/)
+
 *You should keep your secret keys,* **secret!**
 
 Thanks to Marcos Scriven for producing a node implementation that I've shamelessly copied. https://github.com/marcosscriven/loop
