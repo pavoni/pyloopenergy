@@ -7,7 +7,7 @@ It uses their service to provide readings that are updated every 10 seconds for 
 
 To use the service you need the the client serial number and secret keys for your devices.
 
-You can get this by logging into your-loop.com, opening your browser's terminal, and typing in ```Drupal.settings.navetas_realtime```.
+You can get this by logging into your-loop.com, opening your browser's console, and typing in ```Drupal.settings.navetas_realtime```.
 
 *You should keep your secret keys,* **secret!**
 
@@ -34,7 +34,7 @@ How to use
     >> le.terminate()
 
 Notes:
- 1. Data is fetched asynchronously, so `le` may not be populated if you `electricity_useage` straight after creating it. The API provides callback functions on update (there is a simple example below).
+ 1. Data is fetched asynchronously, so `le` may not be populated if you call `electricity_useage` straight after creating it. The API provides callback functions on update (there is a simple example below).
  2. It can take 15s to terminate the monitoring thread after calling `terminate`.
 
 
