@@ -167,6 +167,7 @@ class LoopEnergy():
             except (
                 ValueError,
                 AttributeError,
+                socketIO_client.exceptions.SocketIOError,
                 requests.exceptions.RequestException) as ex:
                 # Looks like ValueError comes from an
                 # invalid HTTP packet return
