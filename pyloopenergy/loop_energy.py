@@ -10,9 +10,9 @@ import threading
 import logging
 import requests
 
-# Uses Socket.io protocol 0.9 - so is not compatible with 1.0
-# So important to use socketIO-client v 0.5.6
-import socketIO_client
+# Now uses Socket.io protocol 2.0 so bump to use nexus fork
+# see https://pypi.org/project/socketIO-client-nexus/0.7.6/
+import socketIO_client_nexus as socketIO_client
 
 LOG = logging.getLogger(__name__)
 
