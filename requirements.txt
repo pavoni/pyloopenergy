@@ -1,1 +1,1 @@
-socketIO-client==0.5.7.2
+socketIO-client-nexus==0.7.6
