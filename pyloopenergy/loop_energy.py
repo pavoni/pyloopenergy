@@ -68,6 +68,9 @@ class LoopEnergy():
         self.gas_kw = None
         self.elec_kw = None
 
+        self.gas_rssi = None
+        self.elec_rssi = None
+
         self.gas_old_timestamp = None
         self.gas_old_reading = None
 
@@ -181,6 +184,7 @@ class LoopEnergy():
         self.connected_ok = True
         self.updated_in_interval = True
         self.elec_kw = arg['inst']/1000.0
+        self.elec_rssi = arg['rssi']
         LOG.info('Electricity rate: %s', self.elec_kw)
         if self._elec_callback is not None:
             self._elec_callback()
@@ -192,6 +196,7 @@ class LoopEnergy():
         self.connected_ok = True
         self.updated_in_interval = True
         gas_reading = arg['totalRegister']
+        gas_rssi = arg['rssi']
         device_timestamp = arg['deviceTimestamp']
         if device_timestamp == self.gas_device_timestamp:
             # we have this already
@@ -202,6 +207,7 @@ class LoopEnergy():
 
         self.gas_old_reading = self.gas_reading
         self.gas_reading = gas_reading
+        self.gas_rssi = gas_rssi
 
         if self.gas_old_timestamp is None:
             return
