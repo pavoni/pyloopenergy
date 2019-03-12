@@ -68,8 +68,8 @@ class LoopEnergy():
         self.gas_kw = None
         self.elec_kw = None
 
-        self.gas_rssi = None
-        self.elec_rssi = None
+        self.gas_rssi_value = None
+        self.elec_rssi_value = None
 
         self.gas_old_timestamp = None
         self.gas_old_reading = None
@@ -99,6 +99,16 @@ class LoopEnergy():
     def init_ok(self):
         """Were we able to connect?."""
         return self.connected_ok
+
+    @property
+    def gas_rssi(self):
+        """RSSI from the gas meter device"""
+        return self.gas_rssi_value
+
+    @property
+    def electricity_rssi(self):
+        """RSSI from the electricity meter device"""
+        return self.elec_rssi_value
 
     def subscribe_gas(self, callback):
         """Add a callback function for gas updates."""
@@ -184,7 +194,7 @@ class LoopEnergy():
         self.connected_ok = True
         self.updated_in_interval = True
         self.elec_kw = arg['inst']/1000.0
-        self.elec_rssi = arg['rssi']
+        self.elec_rssi_value = arg['rssi']
         LOG.info('Electricity rate: %s', self.elec_kw)
         if self._elec_callback is not None:
             self._elec_callback()
@@ -207,7 +217,7 @@ class LoopEnergy():
 
         self.gas_old_reading = self.gas_reading
         self.gas_reading = gas_reading
-        self.gas_rssi = gas_rssi
+        self.gas_rssi_value = gas_rssi
 
         if self.gas_old_timestamp is None:
             return
