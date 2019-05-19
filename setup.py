@@ -2,7 +2,7 @@
 from setuptools import setup, find_packages
 
 setup(name='pyloopenergy',
-      version='0.1.2',
+      version='0.1.3',
       description='Access Loop Energy energy monitors via Socket.IO API',
       url='http://github.com/pavoni/pyloopenergy',
       author='Greg Dowling',
