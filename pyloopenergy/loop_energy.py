@@ -180,6 +180,7 @@ class LoopEnergy():
             except (
                 ValueError,
                 AttributeError,
+                IndexError,
                 socketIO_client.exceptions.SocketIOError,
                 requests.exceptions.RequestException) as ex:
                 # Looks like ValueError comes from an
