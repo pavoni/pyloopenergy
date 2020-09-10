@@ -8,13 +8,13 @@ and gas monitors (https://www.your-loop.com/)
 
 import threading
 import logging
+import time
 import requests
 import socketio
 
 SIO = socketio.Client()
 
 LOG = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG, format='%(message)s')
 
 LOOP_SERVER = 'https://www.your-loop.com:443'
 
@@ -24,6 +24,9 @@ RECONNECT_AFTER = 60
 
 # Time to wait for updates (secs)
 WAIT_BEFORE_POLL = 15
+
+# Time to wait for updates (secs)
+WAIT_BEFORE_RETRY = 60
 
 # https://www.gov.uk/guidance/gas-meter-readings-and-bill-calculation
 # Energy value of the gas in MJ per m3
@@ -137,19 +140,22 @@ class LoopEnergy():
             LOG.debug('Socket connected')
 
         @SIO.event
-        def connect_error():  # pylint: disable=unused-variable
-            LOG.debug('Socket connection failed')
+        def connect_error(err):  # pylint: disable=unused-variable
+            LOG.debug('Socket connection failed (%s)', err)
 
         LOG.info('Started LoopEnergy thread')
 
         while not self.thread_exit:
             try:
                 if self.reconnect_needed:
+                    LOG.warning('Waiting %ds to retry socket connection', WAIT_BEFORE_RETRY)
                     SIO.disconnect()
+                    SIO.sleep(WAIT_BEFORE_RETRY)
                     LOG.warning('Retrying socket connection')
+                    SIO.connect(LOOP_SERVER)
                 else:
                     LOG.info('Opening socket connection')
-                SIO.connect(LOOP_SERVER)
+                    SIO.connect(LOOP_SERVER)
                 self.reconnect_needed = False
                 SIO.emit('subscribe_electric_realtime',
                          {
@@ -177,14 +183,15 @@ class LoopEnergy():
                         intervals_without_update * WAIT_BEFORE_POLL)
                     if time_without_update > RECONNECT_AFTER:
                         self.reconnect_needed = True
-                        LOG.warning('No updates for %s - reconnecting',
+                        LOG.warning('No updates for %ss - reconnecting',
                                     RECONNECT_AFTER)
                     LOG.debug('LoopEnergy thread poll')
             except (
                     ValueError,
                     AttributeError,
                     IndexError,
-                    requests.exceptions.RequestException
+                    requests.exceptions.RequestException,
+                    socketio.exceptions.ConnectionError
                 ) as ex:
                 # Looks like ValueError comes from an
                 # invalid HTTP packet return
@@ -193,6 +200,7 @@ class LoopEnergy():
                 LOG.warning('Exception (will try to reconnect) -  %s', ex)
                 self.reconnect_needed = True
         LOG.info('Exiting LoopEnergy thread')
+        SIO.disconnect()
 
     def _update_elec(self, arg):
         self.connected_ok = True
