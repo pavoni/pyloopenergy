@@ -9,15 +9,14 @@ and gas monitors (https://www.your-loop.com/)
 import threading
 import logging
 import requests
+import socketio
 
-# Now uses Socket.io protocol 2.0 so bump to use nexus fork
-# see https://pypi.org/project/socketIO-client-nexus/0.7.6/
-import socketIO_client_nexus as socketIO_client
+SIO = socketio.Client()
 
 LOG = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG, format='%(message)s')
 
-LOOP_SERVER = 'https://www.your-loop.com'
-LOOP_PORT = 443
+LOOP_SERVER = 'https://www.your-loop.com:443'
 
 # How long to wait for updates before assuming the connection
 # has died (and so reconnect) (secs)
@@ -47,13 +46,14 @@ class LoopEnergy():
     Based on reverse engineering by marcosscriven
     https://github.com/marcosscriven/loop
     """
+
     def __init__(self, elec_serial, elec_secret,
                  gas_serial=None, gas_secret=None,
                  gas_meter_type=METRIC, gas_calorific=DEFAULT_CALORIFIC):
         # pylint: disable=too-many-arguments
-        '''
+        """
         Electricity is always required, gas is optional
-        '''
+        """
         self.elec_serial = elec_serial
         self.elec_secret = elec_secret
 
@@ -120,69 +120,72 @@ class LoopEnergy():
 
     def _run_event_thread(self):
 
-        class Namespace(socketIO_client.BaseNamespace):
-            """Class top allow socket_io error callbacks."""
+        @SIO.event
+        def electric_realtime(data):  # pylint: disable=unused-variable
+            self._update_elec(data)
 
-            def on_disconnect(inner_self):
-                # pylint: disable=no-self-argument
-                if self.thread_exit:
-                    return
-                if self.connected_ok:
-                    self.reconnect_needed = True
-                    return
+        @SIO.event
+        def gas_interval(data):  # pylint: disable=unused-variable
+            self._update_gas(data)
 
-                LOG.error('Could not connect to https://www.your-loop.com')
-                LOG.error('Please check your keys are correct. Terminating')
-                self.terminate()
+        @SIO.event
+        def disconnect():  # pylint: disable=unused-variable
+            LOG.debug('Socket disconnected')
+
+        @SIO.event
+        def connect():  # pylint: disable=unused-variable
+            LOG.debug('Socket connected')
+
+        @SIO.event
+        def connect_error():  # pylint: disable=unused-variable
+            LOG.debug('Socket connection failed')
 
         LOG.info('Started LoopEnergy thread')
+
         while not self.thread_exit:
             try:
                 if self.reconnect_needed:
+                    SIO.disconnect()
                     LOG.warning('Retrying socket connection')
                 else:
                     LOG.info('Opening socket connection')
-                with socketIO_client.SocketIO(
-                        LOOP_SERVER, LOOP_PORT,
-                        Namespace) as socket_io:
-                    self.reconnect_needed = False
-                    socket_io.on('electric_realtime', self._update_elec)
-                    socket_io.on('gas_interval', self._update_gas)
-                    socket_io.emit('subscribe_electric_realtime',
-                                   {
-                                       'serial': self.elec_serial,
-                                       'clientIp': '127.0.0.1',
-                                       'secret': self.elec_secret
-                                   })
+                SIO.connect(LOOP_SERVER)
+                self.reconnect_needed = False
+                SIO.emit('subscribe_electric_realtime',
+                         {
+                             'serial': self.elec_serial,
+                             'clientIp': '127.0.0.1',
+                             'secret': self.elec_secret
+                         })
 
-                    if self.gas_serial is not None:
-                        socket_io.emit('subscribe_gas_interval',
-                                       {
-                                           'serial': self.gas_serial,
-                                           'clientIp': '127.0.0.1',
-                                           'secret': self.gas_secret
-                                       })
-                    intervals_without_update = 0
-                    while not (self.thread_exit or self.reconnect_needed):
-                        self.updated_in_interval = False
-                        socket_io.wait(seconds=WAIT_BEFORE_POLL)
-                        if self.updated_in_interval:
-                            intervals_without_update = 0
-                        else:
-                            intervals_without_update += 1
-                        time_without_update = (
-                            intervals_without_update * WAIT_BEFORE_POLL)
-                        if time_without_update > RECONNECT_AFTER:
-                            self.reconnect_needed = True
-                            LOG.warning('No updates for %s - reconnecting',
-                                        RECONNECT_AFTER)
-                        LOG.debug('LoopEnergy thread poll')
+                if self.gas_serial is not None:
+                    SIO.emit('subscribe_gas_interval',
+                             {
+                                 'serial': self.gas_serial,
+                                 'clientIp': '127.0.0.1',
+                                 'secret': self.gas_secret
+                             })
+                intervals_without_update = 0
+                while not (self.thread_exit or self.reconnect_needed):
+                    self.updated_in_interval = False
+                    SIO.sleep(WAIT_BEFORE_POLL)
+                    if self.updated_in_interval:
+                        intervals_without_update = 0
+                    else:
+                        intervals_without_update += 1
+                    time_without_update = (
+                        intervals_without_update * WAIT_BEFORE_POLL)
+                    if time_without_update > RECONNECT_AFTER:
+                        self.reconnect_needed = True
+                        LOG.warning('No updates for %s - reconnecting',
+                                    RECONNECT_AFTER)
+                    LOG.debug('LoopEnergy thread poll')
             except (
-                ValueError,
-                AttributeError,
-                IndexError,
-                socketIO_client.exceptions.SocketIOError,
-                requests.exceptions.RequestException) as ex:
+                    ValueError,
+                    AttributeError,
+                    IndexError,
+                    requests.exceptions.RequestException
+                ) as ex:
                 # Looks like ValueError comes from an
                 # invalid HTTP packet return
                 # Looks like AttributeError comes from a
@@ -194,7 +197,7 @@ class LoopEnergy():
     def _update_elec(self, arg):
         self.connected_ok = True
         self.updated_in_interval = True
-        self.elec_kw = arg['inst']/1000.0
+        self.elec_kw = arg['inst'] / 1000.0
         self.elec_rssi_value = arg['rssi']
         LOG.info('Electricity rate: %s', self.elec_kw)
         if self._elec_callback is not None:
@@ -226,18 +229,18 @@ class LoopEnergy():
             return
         gas_used = (self.gas_reading - self.gas_old_reading)
         secs = float(self.gas_device_timestamp - self.gas_old_timestamp)
-        hours = secs/(60*60)
+        hours = secs / (60 * 60)
         self.gas_kw = self._convert_kw(gas_used, hours)
         LOG.info('Gas rate: %s', self.gas_kw)
         if self._gas_callback is not None:
             self._gas_callback()
 
     def _convert_kw(self, gas_used, period):
-        '''
+        """
         Convert gas reading to kw
         For details see
         https://www.gov.uk/guidance/gas-meter-readings-and-bill-calculation
-        '''
+        """
         if self.gas_meter_type == METRIC:
             cu_metres = gas_used
         elif self.gas_meter_type == IMPERIAL:
@@ -251,9 +254,10 @@ class LoopEnergy():
         return kwh / period
 
     def terminate(self):
-        '''
+        """
         Close down the update thread
-        '''
+        """
         LOG.info('Terminate thread')
+        SIO.disconnect()
         self.thread_exit = True
         self._event_thread.join()
