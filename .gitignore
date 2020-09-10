@@ -18,6 +18,12 @@ develop-eggs
 lib
 lib64
 __pycache__
+.DS_Store
+.venv
+venv
+
+#local test
+demo.py
 
 # Installer logs
 pip-log.txt
