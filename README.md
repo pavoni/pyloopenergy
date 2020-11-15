@@ -1,6 +1,9 @@
 PyLoopEnergy
 ======
 
+_Sadly Loop Energy have now withdrawn support for the devices and API that this code uses - so it no longer works._
+
+
 This provides a python API to [Loop Energy](https://www.your-loop.com) who provide electricity and gas monitors.
 
 It uses their service to provide readings that are updated every 10 seconds for electricity, and every 15 minutes for gas.
